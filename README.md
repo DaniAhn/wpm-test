@@ -9,7 +9,7 @@ pip install windows-curses
 ### Executing Program
 Start the program by running:
 ```
-python wpm_test.py
+python wpm-test.py
 ```
 Follow the prompts displayed on the terminal window.
 ## Authors
