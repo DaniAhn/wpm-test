@@ -9,13 +9,16 @@ def main(stdscr) -> None:
     Args:
         stdscr: Object representing the standard terminal window.
     """
-    # Sets custom text background colour
+    # Sets custom text colours
     curses.init_color(10, 300, 300, 300)
 
     # Sets custom text colour pairs
     curses.init_pair(1, curses.COLOR_GREEN, 10)
     curses.init_pair(2, curses.COLOR_RED, 10)
     curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)
+
+    # Sets cursor to be invisible
+    curses.curs_set(0)
 
     start_screen(stdscr)
 
@@ -25,7 +28,7 @@ def main(stdscr) -> None:
 
         stdscr.clear()
         stdscr.addstr("You have completed the test!")
-        stdscr.addstr(f"\nYour WPM is {wpm}. Your accuracy is %{accuracy}.")
+        stdscr.addstr(f"\nYour WPM is {wpm}. Your accuracy is {accuracy}%.")
         stdscr.addstr("\nPress any key to try again.")
         stdscr.refresh()
         
@@ -73,7 +76,7 @@ def wpm_test(stdscr) -> None:
               "and hardware boundaries. The speed of an Afrikaans-speaking "
               "operator in Cape Town can be compared with a French-speaking "
               "operator in Paris. (Wikipedia)")
-        
+    
     # List containing user input characters
     input_chars = []
 
@@ -85,12 +88,18 @@ def wpm_test(stdscr) -> None:
     wpm = 0
     accuracy = 100.0
 
-    # Test runs until the length of input_chars matches length of target text
-    while len(input_chars) < len(target):
+    # Ensures loop runs in real time
+    stdscr.nodelay(True)
+    start_time = time.time()
+
+    while True:
+        # Calculates WPM and accuracy
+        wpm = calculate_wpm(start_time, input_chars)
+        accuracy = calculate_accuracy(target, input_chars)
+
         # Refreshes display
         stdscr.clear()
-        accuracy = calculate_accuracy(target, input_chars)
-        display_input(stdscr, target_lines, input_chars, width, accuracy)
+        display_input(stdscr, target_lines, input_chars, width, accuracy, wpm)
         stdscr.refresh()
 
         # Retrieves user input characters
@@ -106,18 +115,28 @@ def wpm_test(stdscr) -> None:
         if key == 8:
             if len(input_chars) > 0:
                 input_chars.pop()
-        elif key == 530: # Handles single quote characters
-            input_chars.append("'")
-        elif key == 460: # Handles double quote characters
-            input_chars.append("\"")
-        else: # Adds most recent character to input_chars
-            if len(input_chars) < len(target):
-                input_chars.append(chr(key))
+        else: 
+            try:
+                if key == 530: # Handles single quote characters
+                    input_chars.append("'")
+                elif key == 460: # Handles double quote characters
+                    input_chars.append("\"")
+                else: # Adds most recent character to input_chars
+                    if len(input_chars) < len(target):
+                        input_chars.append(chr(key))
+            except ValueError:
+                pass
+        
+        # Test runs until the length of input matches length of target text
+        if len(input_chars) >= len(target):
+            break
+    
+    stdscr.nodelay(False)
 
-    return wpm, calculate_accuracy(target, input_chars)
+    return calculate_wpm(start_time, input_chars), calculate_accuracy(target, input_chars)
 
 def display_input(stdscr, target_lines: list, input_chars: list, width: int, 
-                  accuracy:float = 100.0) -> None:
+                  accuracy: float = 100.0, wpm: int = 0) -> None:
     """
     Displays target text along with user input.
 
@@ -133,7 +152,9 @@ def display_input(stdscr, target_lines: list, input_chars: list, width: int,
     # Splits input into lines to fit the terminal window
     input_lines = textwrap.fill("".join(input_chars), width).splitlines()
 
-    stdscr.addstr(len(target_lines) + 2, 0, f"Accuracy: %{accuracy}")
+    # Updates and displays WPM and accuracy
+    stdscr.addstr(len(target_lines), 0, f"WPM: {wpm}")
+    stdscr.addstr(len(target_lines) + 1, 0, f"Accuracy: {accuracy}%")
 
     # Writes user input to the terminal
     for y, line in enumerate(input_lines):
@@ -164,7 +185,29 @@ def calculate_accuracy(target: str, input_chars: list) -> float:
         for i in range(len(input_chars)):
             if input_chars[i] == target[i]:
                 matching_chars += 1
+
         # Divides matching characters by total length of the input
         return round((matching_chars / len(input_chars)) * 100, 1)
+    
+def calculate_wpm(start_time: float, input_chars: list) -> int:
+    """
+    Calculates the WPM at the current time.
+
+    Args:
+        start_time (float): The starting time to measure from.
+        input_chars (list): List containing user input characters.
+
+    Returns:
+        int: An integer containing the current WPM.
+    """
+    # Calculates how much time has passed since the starting time
+    elapsed_time = time.time() - start_times
+
+    # elapsed_time is set to 1 to prevent a zero division error
+    if elapsed_time < 1:
+        elapsed_time = 1
+
+    # Performs the WPM calculation
+    return int((len(input_chars) / (elapsed_time / 60)) / 5)
 
 curses.wrapper(main)
