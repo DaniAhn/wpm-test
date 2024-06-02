@@ -1,4 +1,4 @@
-# WPM test
+# WPM Test
  Speed typing test that calculates WPM and accuracy.
 ## Getting Started
 ### Installing
