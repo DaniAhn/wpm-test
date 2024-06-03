@@ -201,7 +201,7 @@ def calculate_wpm(start_time: float, input_chars: list) -> int:
         int: An integer containing the current WPM.
     """
     # Calculates how much time has passed since the starting time
-    elapsed_time = time.time() - start_times
+    elapsed_time = time.time() - start_time
 
     # elapsed_time is set to 1 to prevent a zero division error
     if elapsed_time < 1:
