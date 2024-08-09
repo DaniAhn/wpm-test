@@ -9,12 +9,9 @@ def main(stdscr) -> None:
     Args:
         stdscr: Object representing the standard terminal window.
     """
-    # Sets custom text colours
-    curses.init_color(10, 300, 300, 300)
-
     # Sets custom text colour pairs
-    curses.init_pair(1, curses.COLOR_GREEN, 10)
-    curses.init_pair(2, curses.COLOR_RED, 10)
+    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)
 
     # Sets cursor to be invisible
@@ -118,9 +115,14 @@ def wpm_test(stdscr) -> None:
         else: 
             try:
                 if key == 530: # Handles single quote characters
-                    input_chars.append("'")
+                    if len(input_chars) < len(target):
+                        input_chars.append("'")
                 elif key == 460: # Handles double quote characters
-                    input_chars.append("\"")
+                    if len(input_chars) < len(target):
+                        input_chars.append("\"")
+                elif key == 32:  # Handles space character
+                    if len(input_chars) < len(target):
+                        input_chars.append(" ")
                 else: # Adds most recent character to input_chars
                     if len(input_chars) < len(target):
                         input_chars.append(chr(key))
@@ -142,8 +144,8 @@ def display_input(stdscr, target_lines: list, input_chars: list, width: int,
 
     Args:
         stdscr: Object representing the standard terminal window.
-        target_lines (list): List containing target text.
-        input_chars (list): List containing user input characters.
+        target_lines (list[str]): List containing target text.
+        input_chars (list[str]): List containing user input characters.
         width (int): Width of the terminal window.
     """
     # Displays target text to the terminal
@@ -162,7 +164,11 @@ def display_input(stdscr, target_lines: list, input_chars: list, width: int,
             if y < len(target_lines) and x < len(target_lines[y]):
                 target_char = target_lines[y][x]
                 # Sets text colour to green if character matches target text, red otherwise
-                text_colour = curses.color_pair(1) if char == target_char else curses.color_pair(2)
+                if char == target_char:
+                    text_colour = curses.color_pair(1)
+                else:
+                    text_colour = curses.color_pair(2)
+                
                 stdscr.addstr(y, x, target_char, text_colour)
 
 def calculate_accuracy(target: str, input_chars: list) -> float:
@@ -171,7 +177,7 @@ def calculate_accuracy(target: str, input_chars: list) -> float:
 
     Args:
         target (str): String containing target text.
-        input_chars (list): List containing user input characters.
+        input_chars (list[str]): List containing user input characters.
 
     Returns:
         float: A float containing the calculated accuracy rounded to one decimal point.
@@ -195,7 +201,7 @@ def calculate_wpm(start_time: float, input_chars: list) -> int:
 
     Args:
         start_time (float): The starting time to measure from.
-        input_chars (list): List containing user input characters.
+        input_chars (list[str]): List containing user input characters.
 
     Returns:
         int: An integer containing the current WPM.
